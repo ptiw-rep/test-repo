@@ -142,3 +142,93 @@ npm run lint | python app.py https://github.com/myorg/myrepo 42 --body-file -
 
 **Q: The inline comment failed with a "path not in diff" error.**
 * **A:** GitHub only allows inline comments on lines that are actually part of the PR's diff (added or modified lines). You cannot comment on unchanged lines.
+
+
+Here is the section you can copy and paste directly into your `README.md`. It seamlessly follows the CLI documentation and focuses on how developers can integrate it into their own Python code.
+
+***
+
+## Usage as a Python Module
+
+You can easily integrate this tool into your own Python applications, CI/CD scripts, or automation pipelines by importing it as a module. 
+
+When used as a module, it exposes a clean, high-level API and raises proper Python exceptions instead of terminating the process.
+
+### Basic Integration
+
+Assuming `app.py` is in your project directory (or installed in your environment):
+
+```python
+import app
+
+# Post a simple text comment
+comment_url = app.post_pr_comment(
+    repo_url="https://github.com/myorg/myrepo",
+    pr_number=42,
+    text="Automated tests passed successfully!"
+)
+
+print(f"Comment created at: {comment_url}")
+```
+
+### Advanced Usage & Error Handling
+
+For production applications, you should wrap the call in a `try/except` block to handle potential network, authentication, or parsing errors gracefully.
+
+```python
+import app
+
+def notify_pr(repo_url: str, pr_number: int, message: str):
+    try:
+        # You can optionally pass a token directly, otherwise it uses the GITHUB_TOKEN env var
+        url = app.post_pr_comment(
+            repo_url=repo_url,
+            pr_number=pr_number,
+            text=message,
+            token="ghp_..." # Optional: overrides environment variable
+        )
+        print(f"Success: {url}")
+        
+    except app.GitHubAPIError as e:
+        # Raised if GitHub returns a 4xx or 5xx error (e.g., bad token, PR not found)
+        print(f"GitHub API rejected the request: {e}")
+        
+    except app.URLParseError as e:
+        # Raised if the repo_url format is invalid
+        print(f"Invalid repository URL: {e}")
+        
+    except ValueError as e:
+        # Raised if no GitHub token is provided via argument or environment variable
+        print(f"Missing configuration: {e}")
+
+notify_pr(
+    repo_url="git@github.com:myorg/myrepo.git",
+    pr_number=105,
+    message="### Deployment\nBuild `v1.2.3` deployed to staging."
+)
+```
+
+### Module API Reference
+
+#### `app.post_pr_comment(repo_url, pr_number, text, token=None)`
+
+Posts a text comment to a GitHub Pull Request.
+
+**Parameters:**
+| Name | Type | Required | Description |
+| :--- | :--- | :---: | :--- |
+| `repo_url` | `str` | ✅ | The GitHub repository URL (HTTPS or SSH). |
+| `pr_number` | `int` | ✅ | The integer Pull Request number. |
+| `text` | `str` | ✅ | The text/markdown content to post. |
+| `token` | `str` | ❌ | GitHub PAT. Falls back to the `GITHUB_TOKEN` environment variable if omitted. |
+
+**Returns:**
+* `str`: The HTML URL of the newly created comment (e.g., `https://github.com/owner/repo/pull/42#issuecomment-123456789`).
+
+**Raises:**
+* `app.GitHubAPIError`: If the GitHub API returns an error response.
+* `app.URLParseError`: If the `repo_url` cannot be parsed into a valid owner/repo format.
+* `ValueError`: If no authentication token is found.
+
+### Note on Environment Variables
+When imported as a module, `app.py` will automatically attempt to load a `.env` file using `python-dotenv` (if installed). If you prefer to manage environment variables in your host application, you can safely ignore the `.env` file or disable `python-dotenv`. The module will always fall back to reading `os.environ.get("GITHUB_TOKEN")`.

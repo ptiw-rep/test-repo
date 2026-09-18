@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import re
 import sys
@@ -9,7 +8,6 @@ from typing import Tuple
 
 import requests
 from dotenv import load_dotenv
-
 
 # ---------------------------------------------------------------------------
 # URL Parsing Helpers
@@ -24,7 +22,7 @@ def parse_repo_url(url: str) -> Tuple[str, str]:
     pattern = r"(?:https?://(?:[^@/]+@)?github\.com/|git@github\.com:|ssh://git@github\.com/)([^/]+)/([^/.]+?)(?:\.git)?/?$"
     match = re.match(pattern, url)
     if not match:
-        raise ValueError(f"❌ Could not parse owner/repo from URL: {url}")
+        raise ValueError(f"Could not parse owner/repo from URL: {url}")
     return match.group(1), match.group(2)
 
 
@@ -38,7 +36,7 @@ def parse_pr_identifier(pr_input: str) -> int:
     if match:
         return int(match.group(1))
         
-    raise ValueError(f"❌ Could not parse PR number from: {pr_input}. Provide a number or a PR URL.")
+    raise ValueError(f"Could not parse PR number from: {pr_input}. Provide a number or a PR URL.")
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +54,7 @@ def convert_html_to_markdown(html: str) -> str:
         converter.body_width = 0
         return converter.handle(html).strip()
     except ImportError:
-        print("⚠️  html2text not installed. Passing HTML as-is.", file=sys.stderr)
+        print("html2text not installed. Passing HTML as-is.", file=sys.stderr)
         return html
 
 def prepare_body(raw: str, fmt: ContentFormat) -> str:
@@ -97,7 +95,7 @@ class GitHubClient:
     def _post(self, url: str, payload: dict) -> dict:
         resp = self.session.post(url, json=payload)
         if not resp.ok:
-            print(f"❌ GitHub API error {resp.status_code}:\n{resp.text}", file=sys.stderr)
+            print(f"GitHub API error {resp.status_code}:\n{resp.text}", file=sys.stderr)
             sys.exit(1)
         return resp.json()
 
@@ -135,7 +133,7 @@ def read_body(args) -> str:
         return args.body
     if not sys.stdin.isatty():
         return sys.stdin.read()
-    print("❌ Provide --body, --body-file, or pipe content via stdin.", file=sys.stderr)
+    print("Provide --body, --body-file, or pipe content via stdin.", file=sys.stderr)
     sys.exit(1)
 
 def main():
@@ -163,7 +161,7 @@ def main():
     # 3. Authenticate
     token = args.token or os.environ.get("GITHUB_TOKEN")
     if not token:
-        print("❌ Provide a token via --token or set the GITHUB_TOKEN environment variable.", file=sys.stderr)
+        print("Provide a token via --token or set the GITHUB_TOKEN environment variable.", file=sys.stderr)
         sys.exit(1)
 
     client = GitHubClient(token)
@@ -172,10 +170,10 @@ def main():
     if args.path and args.line:
         commit_sha = client.get_latest_commit_sha(owner, repo, pr_number)
         result = client.post_review_comment(owner, repo, pr_number, body, commit_sha, args.path, args.line)
-        print(f"✅ Inline comment posted: {result['html_url']}")
+        print(f"Inline comment posted: {result['html_url']}")
     else:
         result = client.post_issue_comment(owner, repo, pr_number, body)
-        print(f"✅ Comment posted: {result['html_url']}")
+        print(f"Comment posted: {result['html_url']}")
 
 if __name__ == "__main__":
     main()

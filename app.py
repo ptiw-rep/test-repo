@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-GitHub PR Comment Writer (URL-based)
-
-Posts comments to GitHub Pull Requests using just the Repo URL and a PAT.
-Supports plain text, Markdown, and HTML content.
-
-Usage:
-    python pr_comment.py <repo_url> <pr_number_or_url> --body "LGTM!"
-"""
-
 import argparse
 import json
 import os
